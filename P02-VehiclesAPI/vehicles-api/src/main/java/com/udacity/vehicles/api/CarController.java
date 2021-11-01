@@ -1,8 +1,8 @@
 package com.udacity.vehicles.api;
 
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.service.CarService;
@@ -16,8 +16,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,10 +56,10 @@ class CarController {
      */
     @ApiOperation(value = "Get all vehicles")
     @GetMapping
-    Resources<Resource<Car>> list() {
-        List<Resource<Car>> resources = carService.list().stream().map(assembler::toResource)
+    CollectionModel<EntityModel<Car>> list() {
+        List<EntityModel<Car>> entityModels = carService.list().stream().map(assembler::toModel)
                 .collect(Collectors.toList());
-        return new Resources<>(resources,
+        return new CollectionModel<>(entityModels,
                 linkTo(methodOn(CarController.class).list()).withSelfRel());
     }
 
@@ -69,14 +70,14 @@ class CarController {
      */
     @ApiOperation("Get vehicle by ID")
     @GetMapping("/{id}")
-    Resource<Car> get(@PathVariable Long id) {
+    EntityModel<Car> get(@PathVariable Long id) {
         /**
          * TODO: Use the `findById` method from the Car Service to get car information.
          * TODO: Use the `assembler` on that car and return the resulting output.
          *   Update the first line as part of the above implementing.
          */
         Car car = carService.findById(id);
-        return assembler.toResource(car);
+        return assembler.toModel(car);
     }
 
     /**
@@ -94,8 +95,12 @@ class CarController {
          *   Update the first line as part of the above implementing.
          */
         Car savedCar = carService.save(car);
-        Resource<Car> resource = assembler.toResource(savedCar);
-        return ResponseEntity.created(new URI(resource.getId().expand().getHref())).body(resource);
+        EntityModel<Car> entityModel = assembler.toModel(savedCar);
+        return ResponseEntity.created(new URI(entityModel
+                .getLink("self")
+                .orElse(new Link("self"))
+                .getHref()))
+                .body(entityModel);
     }
 
     /**
@@ -115,8 +120,12 @@ class CarController {
          */
         car.setId(id);
         Car updatedCar = carService.save(car);
-        Resource<Car> resource = assembler.toResource(updatedCar);
-        return ResponseEntity.created(new URI(resource.getId().expand().getHref())).body(resource);
+        EntityModel<Car> entityModel = assembler.toModel(updatedCar);
+        return ResponseEntity.created(new URI(entityModel
+                .getLink("self")
+                .orElse(new Link("self"))
+                .getHref()))
+                .body(entityModel);
     }
 
     /**

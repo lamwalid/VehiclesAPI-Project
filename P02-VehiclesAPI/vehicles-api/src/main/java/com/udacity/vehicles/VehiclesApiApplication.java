@@ -52,6 +52,7 @@ public class VehiclesApiApplication {
      */
     @Bean(name="maps")
     public WebClient webClientMaps(@Value("${maps.endpoint}") String endpoint) {
+
         return WebClient.create(endpoint);
     }
 
